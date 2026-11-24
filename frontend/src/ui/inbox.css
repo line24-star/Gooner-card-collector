@@ -1,0 +1,92 @@
+/* Message centre: slides out from the right. A new collector's offer slides in once as .inbox-pop. */
+.inbox-btn { position: relative; }
+.inbox-badge {
+  position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box;
+  border-radius: 9px; background: var(--coin); color: #201400; font-size: 0.7rem; font-weight: 800; line-height: 18px; text-align: center;
+}
+.inbox-badge[hidden] { display: none; }
+
+/* Attention: a number alone is easy to miss. With something new the button widens, names what
+   waits and shows its clock; the envelope rings and a ring of light pulses around the button.
+   Urgent (an offer, or something that ends within the hour) is warmer and faster. */
+.inbox-flag { display: none; font-size: 0.78rem; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.inbox-flag b { font-weight: 800; }
+.inbox-btn.has-new {
+  width: auto; padding: 0 12px 0 10px; border-radius: 16px; display: inline-flex; align-items: center; gap: 6px;
+  border-color: var(--coin); color: var(--coin);
+  animation: inbox-glow 2.4s ease-in-out infinite;
+}
+.inbox-btn.has-new .inbox-flag:not([hidden]) { display: inline; }
+.inbox-btn.has-new .inbox-icon-env { display: inline-block; transform-origin: 50% 20%; animation: inbox-ring 4s ease-in-out infinite; }
+.inbox-btn.has-new .inbox-badge { animation: inbox-badge-pulse 1.6s ease-in-out infinite; }
+.inbox-btn.is-urgent { border-color: var(--danger); color: #fff; background: color-mix(in srgb, var(--danger) 55%, var(--panel-2)); animation-duration: 1.1s; }
+.inbox-btn.is-urgent .inbox-icon-env { animation-duration: 1.6s; }
+.inbox-btn.is-urgent .inbox-badge { background: #fff; color: var(--danger); animation-duration: 0.9s; }
+.inbox-btn.is-ringing .inbox-icon-env { animation: inbox-ring-hard 0.9s ease-in-out 2; }
+@keyframes inbox-glow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent); }
+  50% { box-shadow: 0 0 0 7px transparent; }
+}
+@keyframes inbox-ring {
+  0%, 70%, 100% { transform: rotate(0); }
+  75% { transform: rotate(-16deg); } 80% { transform: rotate(14deg); } 85% { transform: rotate(-10deg); } 90% { transform: rotate(8deg); } 95% { transform: rotate(-4deg); }
+}
+@keyframes inbox-ring-hard {
+  0%, 100% { transform: rotate(0) scale(1); }
+  15% { transform: rotate(-22deg) scale(1.25); } 30% { transform: rotate(20deg) scale(1.25); } 45% { transform: rotate(-16deg) scale(1.2); }
+  60% { transform: rotate(12deg) scale(1.15); } 80% { transform: rotate(-6deg) scale(1.05); }
+}
+@keyframes inbox-badge-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+
+.inbox-shade { position: fixed; inset: 0; z-index: 900; background: rgba(5, 6, 15, 0.45); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.inbox-shade.is-open { opacity: 1; pointer-events: auto; }
+.inbox {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 901; width: min(420px, 100vw); box-sizing: border-box;
+  padding: 16px; overflow-y: auto; background: var(--bg-2); border-left: 1px solid var(--line); box-shadow: var(--shadow-lg);
+  transform: translateX(105%); transition: transform 0.28s var(--ease-pop, ease-out);
+}
+.inbox.is-open { transform: none; }
+.inbox-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.inbox-head h2 { margin: 0; font-size: 1.2rem; }
+.inbox-list { display: grid; gap: 10px; }
+.inbox-sub { margin: 20px 0 8px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.inbox-empty { margin: 8px 0; }
+.inbox-news { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 0.9rem; }
+.inbox-news li { padding: 8px 10px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line-soft); }
+
+.inbox-msg {
+  display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--text); text-decoration: none;
+}
+a.inbox-msg:hover { border-color: var(--accent); }
+.inbox-msg.is-offer { border-color: var(--coin); background: color-mix(in srgb, var(--coin) 7%, var(--panel)); }
+.inbox-icon { font-size: 1.5rem; line-height: 1; }
+.inbox-thumb { flex: none; width: 64px; aspect-ratio: 63 / 88; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }
+.inbox-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.92rem; overflow-wrap: anywhere; }
+.inbox-clock { font-size: 0.82rem; color: var(--muted); }
+.inbox-clock b { color: var(--coin); font-variant-numeric: tabular-nums; }
+/* What taking the offer costs: in the colour of the treatment whose slot empties, not an alarm. */
+.inbox-warn { color: color-mix(in srgb, var(--tone, var(--warn)) 60%, var(--text)); font-size: 0.88rem; font-weight: 700; }
+.inbox-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.inbox-acts .btn { padding: 6px 12px; font-size: 0.88rem; }
+
+.inbox-pop {
+  position: fixed; top: 64px; right: 16px; z-index: 880; width: min(420px, calc(100vw - 32px));
+  box-shadow: var(--shadow-lg); border-radius: 12px; animation: inbox-pop-in 0.35s var(--ease-pop, ease-out) both;
+}
+.inbox-pop .inbox-msg { background: var(--panel-2); }
+.inbox-pop.is-leaving { opacity: 0; transform: translateX(40px); transition: opacity 0.25s, transform 0.25s; }
+@keyframes inbox-pop-in { from { opacity: 0; transform: translateX(110%); } }
+@media (prefers-reduced-motion: reduce) {
+  .inbox { transition: none; }
+  .inbox-pop { animation: none; }
+  /* no movement: the colour, the word and the clock still say that something waits */
+  .inbox-btn.has-new, .inbox-btn.has-new .inbox-icon-env, .inbox-btn.has-new .inbox-badge, .inbox-btn.is-ringing .inbox-icon-env { animation: none; }
+  .inbox-btn.has-new { box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 45%, transparent); }
+}
+.is-empty .inbox-btn { display: none; }
+/* A narrow window has no room for the word: the colour, the ring and the number stay. */
+@media (max-width: 720px) {
+  .inbox-btn.has-new { width: 32px; padding: 0; border-radius: 50%; justify-content: center; }
+  .inbox-btn.has-new .inbox-flag:not([hidden]) { display: none; }
+}

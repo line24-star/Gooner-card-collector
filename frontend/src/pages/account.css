@@ -1,0 +1,31 @@
+.acct-head { display: flex; gap: 18px; align-items: center; }
+.acct-avatar {
+  flex: none; width: 72px; height: 72px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 2rem; font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), #6ec8ff); color: #0b0e1e;
+}
+.acct-who { min-width: 0; flex: 1; }
+.acct-who p { margin: 6px 0 0; }
+.acct-name label { display: block; font-size: 0.8rem; margin-bottom: 4px; }
+.acct-name-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.acct-name-row .input {
+  flex: 1 1 200px; max-width: 320px; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); color: var(--text);
+  font: inherit; font-size: 1.15rem; font-weight: 700;
+}
+.acct-note { min-height: 1.2em; font-size: 0.85rem; color: var(--online); }
+.acct-path { display: block; padding: 8px 10px; overflow-wrap: anywhere; }
+.acct-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.acct-actions a.btn { text-decoration: none; }
+.acct-small { font-size: 0.85rem; margin: 12px 0 0; }
+.acct-reasons { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 24px; }
+.acct-reasons li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding: 4px 0; }
+.acct-reasons b, .acct-amount { color: var(--coin); font-variant-numeric: tabular-nums; }
+.acct-reasons b.is-neg, .acct-amount.is-neg { color: var(--danger); }
+.acct-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.acct-table th { text-align: left; font-weight: 600; color: var(--muted); padding: 4px 12px 4px 0; }
+.acct-table td { padding: 4px 12px 4px 0; border-top: 1px solid var(--line); }
+.acct-balance, .acct-amount { text-align: right; }
+.acct-table th:nth-child(n+3) { text-align: right; }
+.tile a { font-size: 0.85rem; }
+@media (max-width: 560px) { .acct-head { flex-direction: column; align-items: flex-start; } }

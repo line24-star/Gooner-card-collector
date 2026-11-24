@@ -1,0 +1,58 @@
+/* Tag suggestion dropdown (ui/tagInput.ts). Sits right after the input, inside the same parent. */
+.tag-suggest-anchor { position: relative; }
+
+.tag-suggest {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 1000;
+  min-width: 100%;
+  width: max-content;
+  max-width: 360px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  text-align: left;
+}
+.tag-suggest[hidden] { display: none; }
+
+.tag-suggest-heading {
+  padding: 8px 10px 4px;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tag-suggest-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.tag-suggest-row:hover { background: rgba(255, 255, 255, 0.06); }
+.tag-suggest-row.is-active { background: rgba(124, 140, 255, 0.22); }
+.tag-suggest-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tag-suggest-name mark { background: transparent; color: var(--accent); font-weight: 700; }
+.tag-suggest-count { flex: none; font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.tag-suggest-empty {
+  padding: 8px 10px;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: default;
+}

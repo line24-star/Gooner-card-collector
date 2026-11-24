@@ -1,0 +1,106 @@
+.mk { display: grid; gap: 16px; width: 100%; }
+.mk h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.mk .panel > p.muted { margin: 0 0 12px; }
+.mk-error { margin: 0; padding: 10px 14px; border: 1px solid var(--danger); border-radius: var(--radius); color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--panel)); }
+.mk-coin { color: var(--coin); }
+.is-up { color: var(--online); }
+.is-down { color: var(--danger); }
+
+/* header */
+.mk-head { display: grid; gap: 12px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; }
+.mk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; grid-column: 1; }
+.mk-stat { display: grid; gap: 2px; }
+.mk-big { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.mk-mood-row { grid-column: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.mk-mood { text-transform: capitalize; font-weight: 700; padding: 3px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); }
+.mood-boom { color: var(--online); border-color: var(--online); }
+.mood-rising { color: var(--online); }
+.mood-flat { color: var(--muted); }
+.mood-falling { color: var(--warn); }
+.mood-bust { color: var(--danger); border-color: var(--danger); }
+.mk-index-chart { grid-column: 2; grid-row: 1 / span 2; min-width: 0; }
+@media (max-width: 800px) {
+  .mk-head { grid-template-columns: 1fr; }
+  .mk-index-chart { grid-column: 1; grid-row: auto; }
+}
+
+/* offer */
+.mk-offer {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: center;
+  border-color: var(--coin); background: linear-gradient(120deg, color-mix(in srgb, var(--coin) 12%, var(--panel)), var(--panel) 60%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--coin) 40%, transparent), 0 10px 30px color-mix(in srgb, var(--coin) 12%, transparent);
+}
+.mk-offer-body p { margin: 4px 0; }
+.mk-offer-line { font-size: 1.15rem; }
+.mk-verdict { font-weight: 700; }
+.mk-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+@media (max-width: 560px) { .mk-offer { grid-template-columns: 1fr; justify-items: center; } .mk-offer-body { justify-self: stretch; } }
+
+/* grids */
+.mk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 18px 14px; justify-items: center; }
+.mk-grid-wide { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.mk-item { display: grid; gap: 6px; justify-items: center; text-align: center; width: 100%; }
+.mk-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; font-size: 0.85rem; }
+.mk-tier { color: var(--muted); }
+.mk-trend { font-variant-numeric: tabular-nums; font-size: 0.85rem; }
+.mk-price { color: var(--coin); font-weight: 700; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.mk-note { margin: 0; font-size: 0.8rem; color: var(--muted); }
+.mk-note.is-short { color: var(--warn); }
+
+/* your cards */
+.mk-title-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.mk-title-row h2 { margin: 0; }
+.mk-rows { list-style: none; margin: 0; padding: 0; display: grid; }
+.mk-row {
+  display: grid; grid-template-columns: 90px minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 1.6fr); gap: 8px 14px; align-items: center;
+  padding: 8px 0; border-top: 1px solid var(--line-soft);
+}
+.mk-row-card { cursor: pointer; display: flex; justify-content: center; }
+.mk-row-info { display: grid; gap: 2px; min-width: 0; }
+.mk-row-title { all: unset; cursor: pointer; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-row-title:hover, .mk-row-title:focus-visible { color: var(--accent); }
+.mk-row-value { display: grid; gap: 2px; color: var(--coin); font-variant-numeric: tabular-nums; }
+.mk-wanted { color: var(--warn); font-size: 0.8rem; }
+.mk-row-sell { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.mk-more { margin-top: 12px; }
+@media (max-width: 700px) {
+  .mk-row { grid-template-columns: 90px minmax(0, 1fr); }
+  .mk-row-value, .mk-row-sell { grid-column: 2; justify-content: flex-start; }
+}
+
+/* news */
+.mk-news { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mk-news li { padding: 6px 0; border-top: 1px solid var(--line-soft); }
+.mk-news li:first-child { border-top: 0; }
+.mk-news .muted { margin-right: 8px; font-size: 0.8rem; }
+
+/* v0.5.0: the header is about the player's collection */
+.mk-when { grid-column: 1; margin: 0; font-size: 0.9rem; }
+.mk-index-chart { margin: 0; }
+.mk-index-chart figcaption { font-size: 0.8rem; text-align: center; }
+.mk-big small { font-size: 0.6em; font-weight: 600; opacity: 0.85; }
+.mk-big.is-up { color: var(--online); }
+.mk-big.is-down { color: var(--danger); }
+.mk-item[data-inspect] { cursor: pointer; }
+.mk-news li.is-mine { border-left: 3px solid var(--coin); padding-left: 8px; }
+
+/* v0.8.0: for sale, four lists (one per treatment); the cards dominate */
+.mk-sale > p.muted { max-width: 120ch; }
+.mk-list { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
+.mk-list-title { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-size: 1.08rem; font-weight: 600; }
+.mk-list-title::before { content: ''; flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--rarity); box-shadow: 0 0 10px var(--rarity); }
+.mk-list-title b { color: var(--rarity); }
+.mk-list-note { margin: 10px 0 0; font-size: 0.9rem; }
+.mk-sale-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 22px 14px; }
+@media (min-width: 1000px) { .mk-sale-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (min-width: 1800px) { .mk-sale-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); } }
+.mk-listing { min-width: 0; align-content: start; gap: 4px; }
+.mk-face { width: 100%; display: flex; justify-content: center; cursor: pointer; margin-bottom: 4px; }
+.mk-listing .card { width: min(100%, 236px); }
+.mk-name { max-width: 100%; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk-fills { margin: 0; min-height: 1.5em; font-size: 0.9rem; font-weight: 700; color: var(--rarity); }
+.mk-listing .btn { margin-top: 2px; padding: 7px 14px; font-size: 0.9rem; max-width: 100%; white-space: nowrap; }
+.mk-note, .mk-meta, .mk-trend, .mk-wanted, .mk-news .muted, .mk-index-chart figcaption { font-size: 0.85rem; }
+.mk-tier-line { max-width: 100%; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk-price .mk-trend { font-weight: 600; margin-left: 4px; }
+.mk-note-wanted { color: var(--coin); font-weight: 600; max-width: 230px; }

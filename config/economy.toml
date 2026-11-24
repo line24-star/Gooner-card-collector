@@ -1,0 +1,690 @@
+# Economy tuning: every number the economy uses lives here (Economy Design §10).
+# The server re-reads this file when it changes, so you can tune while the app runs.
+# Check the effect with:  backend\.venv\Scripts\python -m tools.simulate   (run from backend/)
+# Background and reasoning: docs/economy/technical-reference.md
+
+# Welcome coins (v0.1.1): enough to open the first two Standard packs straight away.
+# A player who already started with less is topped up to this amount once, at startup.
+starting_coins = 500
+
+# ---------------------------------------------------------------- coin sources (§2)
+[ingest]
+image = 20                      # v0.9.0 audit: was 15. Five new files a day now pay for one Standard pack
+video = 30                      # v0.9.0 audit: was 25
+# The first scan of an existing library is NOT paid per file: 1000 files × 15 would hand
+# out 15,000 coins on minute one. Only files added after that first scan pay.
+reward_initial_scan = false
+# The first import stays free while it keeps going: a big copy reaches the folder watcher as many
+# batches. Each free batch keeps the window open this many seconds; files after a quiet period pay.
+# Picking a different media folder gives that folder its own free first import.
+initial_import_quiet_seconds = 300
+full_files_per_day = 5          # the first 5 new files a day pay full (5 × 20 = 100)…
+half_files_per_day = 10         # …the next 10 pay half (10 × 10 = 100), the rest nothing
+daily_cap = 200                 # max ingest coins per day: two Standard packs for 15 files. v0.9.0 audit: was 150.
+                                # v0.2.0: was 10 full + 20 half, but ten full images already reached the cap,
+                                # so the half tier could never pay
+
+[tagging]
+# v0.9.0 audit (test round 6: "the player runs out of coins way too quickly"): with coins coming only
+# from scanning and tagging, one tag on every pulled card has to pay for the next pack. A Standard
+# pack (100 coins) holds about 4 new cards early on and 3.4 with half the library pulled, so the
+# first tag pays 30: one tag a card brings 130 coins a pack at the start, 118 at half the library,
+# 102 at 90%. Before: 10 (45 coins a pack: a one-tag player was out of coins after 29 packs).
+first_tag = 30
+extra_tags = [10, 5, 2]         # 2nd, 3rd, 4th tag on the same card (diminishing). v0.9.0 audit: was [5, 3, 2];
+                                # two tags a card pay a third more than one, three tags half more
+floor = 1                       # v0.4.0: every further tag still pays 1 coin (not multiplied)…
+max_paid_tags = 12              # …up to this many paid tags per card
+rush_multiplier = 2.0           # tag rush: once a day the player starts one, and tags pay double…
+rush_minutes = 10               # …for this many minutes
+rush_gap_hours = 8              # v0.9.0: and the next rush starts 8 hours after the last one started at the
+                                # earliest (a rush just before midnight was followed by one just after it)
+# v0.9.0, the tagging pause: more than burst_tags paid tags within burst_seconds start a pause of
+# cooldown_seconds. A tag sent during the pause is applied but pays nothing; a typed tag ends it.
+# One tag every 1.5 seconds is 6 tags in 8 seconds and never starts it; 7 tags inside 8 seconds do.
+burst_tags = 6
+burst_seconds = 8
+cooldown_seconds = 4
+# v0.9.0: bulk tagging (one tag on many selected cards in one call) pays a quarter of the normal
+# rate, at least 1 coin for every tag that pays at all. At the full rate 200 cards x one tag were
+# 6,000 coins in one call (60 Standard packs); at a quarter they are 1,400 (first tag 30 -> 7).
+bulk_multiplier = 0.25
+unowned_factor = 0.25           # unused since v0.3.0: only pulled cards can be tagged. (Was: tagging un-pulled media pays this share.)
+                                # Makes the loop: open packs → organize THOSE cards for more.
+upgrade_review = 25             # review a card pulled in a new treatment (× its multiplier). 25 keeps late RTP on target
+
+# v0.9.0 (decision D1): coins come only from scanning and tagging (above), and from trades on the
+# market. Every other reward below is sealed packs: `reward = { pack = "standard", count = 1 }` puts
+# that many packs into the inventory. Such a pack costs nothing and does not raise pack prices.
+# The daily check-in pays nothing by itself: it unlocks the free daily pack ([free_pack]). The old
+# [category] and [streak] coin tables are gone.
+
+# v0.4.0 (economy audit): close together, so one is always within reach. A fully tagged, all-Normal
+# collection scores about 33%, so the old 50/75/90/100% steps were never reached.
+# v0.9.0: a milestone pays packs, and only when the player claims it (nothing is paid while a pack is opened).
+# Before: 50 to 1,000 coins, paid by itself.
+[[milestones]]
+at = 0.01
+reward = { pack = "standard", count = 1 }
+[[milestones]]
+at = 0.02
+reward = { pack = "standard", count = 1 }
+[[milestones]]
+at = 0.05
+reward = { pack = "standard", count = 1 }
+[[milestones]]
+at = 0.10
+reward = { pack = "deluxe", count = 1 }
+[[milestones]]
+at = 0.15
+reward = { pack = "deluxe", count = 1 }
+[[milestones]]
+at = 0.20
+reward = { pack = "deluxe", count = 1 }
+[[milestones]]
+at = 0.25
+reward = { pack = "deluxe", count = 2 }
+[[milestones]]
+at = 0.30
+reward = { pack = "premium", count = 1 }
+[[milestones]]
+at = 0.35
+reward = { pack = "premium", count = 1 }
+[[milestones]]
+at = 0.40
+reward = { pack = "premium", count = 1 }
+[[milestones]]
+at = 0.45
+reward = { pack = "premium", count = 2 }
+[[milestones]]
+at = 0.50
+reward = { pack = "premium", count = 2 }
+[[milestones]]
+at = 0.60
+reward = { pack = "premium", count = 2 }
+[[milestones]]
+at = 0.75
+reward = { pack = "premium", count = 3 }
+[[milestones]]
+at = 1.00
+reward = { pack = "premium", count = 5 }
+
+# ---------------------------------------------------------------- treatments (§2, §4)
+# multiplier: applied to organizing rewards. weight: relative odds per pack slot.
+# v0.3.0 (test round 2): odds modelled on real boosters. Community pull-rate counts put a Pokémon
+# "hit" at about 1 pack in 3, an illustration or ultra rare at about 1 in 13-15 and a hyper rare
+# at about 1 in 54; a foil rare in Magic is about 1 pack in 12. With these weights a 5-card
+# Standard pack holds a Foil in about 1 pack of 3, a Holo in 1 of 13 and a Special in 1 of 54
+# (per card: 7.7%, 1.6%, 0.37%). Before: 70%, 30% and 7% of packs.
+# value: base card value (drives selling and duplicate conversion).
+[treatments.normal]
+completeness_weight = 1.0
+name = "Normal"
+tier = 0
+multiplier = 1.0
+weight = 9034
+value = 30
+
+[treatments.foil]
+completeness_weight = 1.5
+name = "Foil"
+tier = 1
+multiplier = 1.5
+weight = 770
+value = 125
+
+[treatments.holo]
+completeness_weight = 2.0
+name = "Holo"
+tier = 2
+multiplier = 2.5
+weight = 159
+value = 300
+
+[treatments.special]
+completeness_weight = 3.0
+name = "Special"
+tier = 3
+multiplier = 3.5
+weight = 37
+value = 800
+
+# ---------------------------------------------------------------- completeness (§6.3)
+# v0.7.0 (docs/specs/maximal-collection-completeness-spec.md): completeness counts versions held.
+# Every card has three slots (Foil, Holo, Special); a slot is filled while you hold at least one
+# copy of that treatment. Normal is the base for fusing and is not a slot; tags don't count.
+# 100% means holding every card in Foil, Holo and Special at the same time. Selling or fusing
+# the last copy of a treatment empties its slot, and new files add three empty slots.
+[completeness]
+mode = "slots"                  # "slots"; older: "weighted" (best treatment of a tagged card), "tagged"
+
+# ---------------------------------------------------------------- packs (§3)
+# A rarity ladder (decision 2026-11-12): the packs differ ONLY in rarity odds, size and price.
+# v0.3.0: cheaper and smaller, like a real booster. Packs are bought sealed into an inventory
+# and opened later; the cards are rolled when the pack is opened.
+[packs.standard]
+name = "Standard Pack"
+blurb = "The everyday booster. Base odds."
+size = 5
+base_cost = 100                 # 20 per card
+hue = 230
+
+[packs.deluxe]
+name = "Deluxe Pack"
+blurb = "Twice the odds of a rare treatment on every card."
+size = 5
+base_cost = 180                 # 36 per card
+hue = 280
+weights = { foil = 1540, holo = 318, special = 74 }   # 2× the base weights (Normal stays 9034)
+
+[packs.premium]
+name = "Premium Pack"
+blurb = "Ten cards at three times the odds."
+size = 10
+base_cost = 480                 # 48 per card
+hue = 40
+weights = { foil = 2310, holo = 477, special = 111 }  # 3× the base weights
+
+[inflation]                     # pack costs rise as you play (§3)
+mode = "packs"                  # "packs" or "completeness"
+per_pack = 0.0                  # v0.9.0 audit: prices no longer rise. Was +0.2% per pack bought, +20% after
+                                # 100 packs: the rise alone put a one-tag player under the pack price again
+per_10pct_completeness = 0.06   # used when mode = "completeness" (doc: 5–8% per 10%)
+round_to = 5
+max_multiplier = 1.2            # prices stop rising at +20% (v0.3.0: was +50%; 0 = no cap)
+
+# ---------------------------------------------------------------- soft pity (v0.2.0)
+# After `after_packs` packs in a row without a Holo or Special roll, their odds are multiplied by
+# 1 + boost_per_pack for each further dry pack (up to max_boost). The first such roll resets it.
+# v0.9.0 (decision D4): switched off. Every pack has the same odds. The dry streak is still counted
+# (packs in a row without one of `treatments`) and sent to the page, where it only makes the
+# face-down cards glow more. The numbers below count only with `enabled = true`.
+[pity]
+enabled = false
+treatments = ["holo", "special"]
+after_packs = 15                # a Standard pack has a Holo or Special in about 1 of 11, so 15 dry packs is a real drought
+boost_per_pack = 0.25
+max_boost = 4.0
+
+# ---------------------------------------------------------------- the reveal (v0.9.0, decision D6)
+# The glow on a face-down card is a hint that can be wrong, decided by the server when the pack is
+# opened and stored with it: a card that fills a version slot glows with chance hint_true, a card
+# that fills nothing glows with chance hint_false (a near miss). The rarest card of a pack is the
+# last one with chance rarest_last; otherwise it sits at a random earlier position.
+[reveal]
+hint_true = 0.8
+hint_false = 0.12
+rarest_last = 0.6
+
+# ---------------------------------------------------------------- daily free pack (v0.2.0)
+# One free pack per local day, once the daily check-in is done. It costs no coins and does not
+# raise pack prices.
+[free_pack]
+pack = "standard"
+min_streak = 1
+
+# ---------------------------------------------------------------- selling & value (§4)
+[selling]
+base_rate = 0.40                # share of card value returned (doc: 35–45%)
+decay_per_inflation_pct = 0.005 # rate drops 0.5 points per 1% of pack inflation
+floor = 0.20
+copy_value_decay = 0.25         # each extra owned copy lowers card value
+
+# ---------------------------------------------------------------- duplicates (§5)
+[duplicates]
+early_chance = 0.20             # slot rolls an owned card when you own little (doc: 15–25%)
+late_chance = 0.45              # …rising toward this as you own everything (flattened 2026-11-10b)
+curve = 1.0                     # 1 = linear in owned share; >1 = rises later
+convert_rate = 0.25             # duplicate → coins = value × this (below the sell rate)
+upgrade_chance = 0.0            # unused while keep_copies is on
+keep_copies = true              # v0.4.0 (test round 3): a duplicate is kept as an extra copy. No coins, no automatic
+                                # upgrade: the player sells copies on the market or fuses three into the next treatment
+
+# ---------------------------------------------------------------- fusing (v0.4.0)
+# Give up `copies` copies of one card at one treatment for one copy of it a treatment higher.
+# v0.7.0: a card that is worth more takes more copies. Every step below that the card's Normal
+# market price has reached today adds one copy: under 20 coins 3 copies, from 20 on 4, from 60 on 5,
+# from 180 on 6, from 540 on 7. About 7 in 10 cards stay at 3; the top 1% takes 6 or 7. The count
+# follows the market: a card that climbs past a step needs one more from the next price update.
+# v0.7.1: the count is read from the price at the last update, so your own trades between two
+# updates never change it. An upgrade attempt (switched off, see [upgrades]) costs more by the
+# same share (4 copies instead of 3 = a third more).
+[fuse]
+copies = 3
+price_steps = [20, 60, 180, 540]
+
+# ---------------------------------------------------------------- the card market (v0.4.0)
+# Rules and reasoning: backend/app/game/market.py and docs/economy/technical-reference.md.
+[market]
+tick_hours = 6                  # the whole market moves every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+max_catch_up_ticks = 480        # after a long break at most 120 days are replayed
+warmup_ticks = 124              # a month of history is simulated when the market starts, so charts are full
+# A Normal copy is worth base_value × (reference_print / print_run) ^ elasticity × popularity ^ leverage.
+base_value = 9                  # v0.4.0 audit: was 6; a typical duplicate now sells for 6–9 coins, so sell-or-fuse is a real choice
+reference_print = 20000
+elasticity = 0.55               # 20,000 printed → 9 coins; 2,000 → 32; 400 → 77; 50 → 243
+drop_exponent = 0.5             # a pack pulls a card in proportion to print_run ^ 0.5:
+                                # a card printed 40,000 times turns up 28× as often as one printed 50 times
+popularity_sigma = 0.45         # demand per card, independent of scarcity and treatment
+popularity_range = [0.4, 4.0]
+# v0.5.0 (test round 4, point 5): the price ladder of a real set. Demand counts for more the scarcer a
+# card is: for a wanted card (popularity above 1) leverage = 1 + demand_leverage × log10(reference_print
+# / print_run), so 1 for a mass print, about 2.5 for a Limited and 3.3 to 3.9 for a Chase print; an
+# unloved card keeps its plain scarcity value. Real sets, singles prices of 2026: in Pokémon 151 the top
+# card costs about 1,460× a common and the 5th / 10th / 20th card 26% / 17% / 6% of the top one; in
+# Prismatic Evolutions 9,800× and 20% / 12% / 2%; in the 1999 Base Set (Unlimited) 260× and 9% / 7% /
+# 2%. Cards of one and the same top rarity differ 20-40× by demand alone, commons hardly at all.
+# With 1.0 the top card of 2,000 is worth about 470× the median card (230× of 500, 1,030× of 20,000)
+# and the 5th / 10th / 20th about 35% / 18% / 9% of it. Before (0): 59×, and 58% / 44% / 32%.
+demand_leverage = 1.0
+premium_range = [0.8, 1.0]      # v0.8.0: a card's premium exponent k lies in here (see [market.treatment_value])
+premium_demand_share = 0.6      # 60% of k follows the card's popularity (from 2σ below to 2σ above the typical
+                                # card), 40% is the card's own, so two equally popular cards still differ
+sell_rate = 0.85                # selling pays 85% of the price
+buy_markup = 1.15               # buying a listed card costs 115% of it
+listings_per_treatment = 10     # v0.8.0: for sale are the 10 most valuable cards of each treatment (Normal, Foil,
+                                # Holo, Special), each at that treatment's price. Was: the 20 most valuable Normal cards.
+                                # Only a card whose Normal price has reached the first [fuse] price step (20) is
+                                # listed: bulk is not sold as singles. A list can hold fewer than 10 cards.
+trade_impact = 0.0              # v0.8.0: your own sale does not move the card's price (before: 3% down per copy
+                                # sold). You are one seller among millions. It was also the last way to move a
+                                # price yourself: sell copies to push the price down, buy them back cheaper,
+                                # wait for the price to recover. Anything above 0 reopens that loop, so the
+                                # config is refused while cards are listed (config.dump_return: 0.03 returns
+                                # about 7 times what the buy-back costs)
+buy_impact = 0.0                # v0.8.0: a purchase leaves the price alone (before: +3%, like a sale). A purchase
+                                # that raises the price also raises what the copies fused from it sell for: buying
+                                # 64 Normal copies and fusing them into a Special returned 1.3 times the cost (1.7 times as a wanted card)
+wanted_count = 3                # collectors want this many of YOUR cards each tick…
+wanted_bonus = 1.3              # …and pay this much more for them: a wanted sale pays 85% × 1.3 = 110.5%.
+                                # v0.7.1: was 1.5 (127.5%, more than the 115% a listed card costs, so buying
+                                # and selling a wanted card printed coins). The config is refused when
+                                # sell_rate × wanted_bonus × (1 + buy_impact) reaches buy_markup.
+wanted_min_value = 20           # v0.8.0: collectors only want a card when your most valuable copy of it is worth
+                                # at least this (like offer_min_value), and only a card that can be listed (its
+                                # Normal price has reached the first [fuse] price step). Fewer qualify = fewer are wanted
+offer_chance = 0.6              # a collector's offer for one of your best cards: at most one per tick, so 2-3 a day
+offer_range = [0.9, 1.12]       # the offer is 90% to 112% of the market price (a plain sale pays 85%):
+                                # sometimes a clear win, sometimes barely better than selling. Take it, or wait?
+                                # v0.8.0: was up to 125%, more than the 115% a listed copy costs, so buying a
+                                # listing and waiting for an offer could pay. The config refuses an upper end
+                                # that reaches buy_markup
+                                # v0.7.1: no offer for a wanted card (selling it pays more), and none below
+                                # what a plain sale pays
+offer_top = 5                   # it is for one of your 5 most valuable copies
+offer_min_value = 20            # nobody makes an offer for a copy worth less than this
+index_reversion = 0.08
+index_volatility = 0.004        # v0.9.0 (test round 6, point 17): was 0.012. The whole market moved 2.4% on a day by noise alone
+index_range = [0.45, 2.2]
+card_reversion = 0.06
+# v0.9.0 (test round 6, point 17): quiet days look quiet. Measured on cards worth 20 coins or more
+# (1,000 cards, 120 days): a card's price changed 5.4% on a median day and more than 10% on 23 of
+# 100 card-days; a jump of +50% in a day came 43 times a month per 1,000 cards. Real singles move
+# well under 2% on most days and a +50% day is a few cards a month in a large set. With the numbers
+# below: 1.6% on a median day, more than 10% on 3 of 1,000 card-days, +50% about 5 times a month.
+# The long-run price level stays (the noise is symmetric in log and reverts to the fair value).
+card_volatility = 0.01          # was 0.04
+factor_range = [0.4, 4.0]       # was [0.25, 6.0]: a card's own level stays within 0.4 to 4 times its fair value
+reprint_chance = 0.008          # per tick: about one reprint wave a month
+reprint_share = 0.015           # of all cards, taken from the most valuable fifth
+reprint_growth = [1.3, 2.0]     # their print run grows by this factor
+reserved_below = 150            # the "reserved list": a card printed fewer times than this is never reprinted
+hype_per_tick = 0.05            # hyped cards per tick, on average: about 6 a month (v0.9.0: was 0.5, 60 a month)
+hype_boost = [1.3, 2.2]
+buyout_chance = 0.01            # per tick: about one buyout a month (v0.9.0: was 0.03, one every 8 days)
+buyout_boost = [2.0, 3.5]
+# v0.8.0, momentum: a spike keeps going for a few updates, then corrects, as real buyouts and hyped
+# cards do. A hype or a buyout starts a run. Its first step is momentum_share of the spike (in log
+# points: a ×1.75 hype gives +15%, a ×2.75 buyout +29%). At every later update the price rises by
+# the step with chance momentum_chance and the next step is momentum_decay of it (the run is over
+# once a step is under 1%); otherwise the run breaks and the price drops back (−23% and −43% for
+# the two first steps above). The drop is worked out so that rise and drop cancel out exactly on
+# average: chance × rise + (1 − chance) × drop = 1. So knowing that a run is on is worth nothing:
+# buying into it at 115% and selling at 85% returns 74% on average, 96% as a wanted card.
+momentum_share = 0.25           # 0 = no momentum
+momentum_chance = 0.6           # the config refuses chance × biggest boost ^ share of 0.95 or more (now 0.82)
+momentum_decay = 0.6
+
+# What a rarer copy costs, as a multiple of the card's Normal copy: the multiples of the most
+# sought-after card. v0.8.0: every card has its own premium exponent k (fixed, from its popularity
+# and its id) inside premium_range, and a copy at treatment t costs Normal price × treatment_value[t] ^ k:
+#   k = 1.0 (most sought-after): Foil 4×,   Holo 14×,   Special 50×
+#   k = 0.9 (a typical card):    Foil 3.5×, Holo 10.8×, Special 34×
+#   k = 0.8 (bulk):              Foil 3.0×, Holo 8.3×,  Special 23×
+# Real singles markets (docs/economy/technical-reference.md, "The premium of a rarer copy"): the
+# premium of a foil differs from card to card, and sought-after cards carry the most.
+# Every treatment is for sale since v0.8.0, so buying copies, fusing them and selling the result
+# must not pay. Only cards whose fuse takes 4 copies or more are listed and wanted, and 4 copies
+# cost 4 × 1.15 = 4.6 Normal prices against a Foil that sells for 0.85 × 1.3 × 4 = 4.42 at most.
+# The config is refused when such a loop could return its cost (best loop now: 96%).
+[market.treatment_value]
+normal = 1
+foil = 4
+holo = 14
+special = 50
+
+# How many copies of a card are "issued" when it is scanned in. Share of all cards per tier.
+# min_pack: the cheapest pack that holds cards of this tier; dearer packs hold them too. Without it
+# every pack does. A reprint that lifts a card into a bigger tier also puts it in the cheaper packs.
+[[market.print_tiers]]
+name = "Mass print"
+share = 0.50
+min = 20000
+max = 60000
+[[market.print_tiers]]
+name = "Standard print"
+share = 0.30
+min = 5000
+max = 15000
+[[market.print_tiers]]
+name = "Short print"
+share = 0.14
+min = 1000
+max = 3000
+[[market.print_tiers]]
+name = "Limited"
+share = 0.05
+min = 200
+max = 600
+min_pack = "deluxe"             # v0.4.0: only in Deluxe and Premium packs
+[[market.print_tiers]]
+name = "Chase"
+share = 0.01
+min = 25
+max = 100
+min_pack = "premium"            # only in Premium packs
+
+# The market as a whole: three waves on top of each other, in log points (0.2 ≈ ±22%).
+[[market.cycles]]
+days = 730                      # the long boom and bust
+amplitude = 0.28
+[[market.cycles]]
+days = 120
+amplitude = 0.14
+phase = 1.3
+[[market.cycles]]
+days = 21
+amplitude = 0.06
+phase = 2.1
+
+# ---------------------------------------------------------------- shop deal (v0.4.0)
+# One pack is cheaper for a few hours, a few times. Which pack and how much is fixed per window.
+[deal]
+hours = 4
+discount = [0.2, 0.4]
+per_window = 2
+
+# ---------------------------------------------------------------- upgrade attempts (§3 sink)
+# decision 2026-11-10b: spend coins for a chance to upgrade one card by one treatment.
+# On success the card moves up a tier; on failure the coins are gone and the card stays.
+# v0.7.1: switched off. A Special copy sells for up to 50 times the Normal price, and three attempts cost
+# a few hundred coins, so upgrading and selling printed coins without limit. Fusing is the one way
+# up; it follows the card's price. The numbers below only count when `enabled = true`.
+[upgrades]
+enabled = false
+chance = 0.5
+cost = { normal = 60, foil = 150, holo = 400 }   # v0.4.0 audit: was 100/400/1500 (never worth it next to fusing); still dearer than fusing   # keyed by the card's CURRENT best treatment
+
+# ---------------------------------------------------------------- scoped chase goals
+# decision 2026-11-10b: small, finishable targets so late-game progress is visible.
+# Weekly goals: `per_week` templates with period "week" are picked per player each ISO week.
+# Daily goals (v0.6.0): `per_day` templates with period "day" each local calendar day; they reset at
+# local midnight. The picks of a period are stored when the player first sees them and never change
+# within it. Kinds the player cannot make progress on at that moment are left out (services/chase.py,
+# blocked_kinds): tag when no owned card has a paying tag left (v0.7.1: and a tag goal whose target
+# is above the paying tags that are left), review when every owned card is Special and no review
+# waits, buy when the balance doesn't cover the cheapest listed card.
+# kinds: pull (cards pulled at `treatment` or better), upgrade (cards upgraded, any way, fusing included;
+#        v0.7.1: with upgrade attempts off this counts fuses, so the titles say "fuse"),
+#        tag (paid tags applied), review (shinier cards reviewed), open (packs opened),
+#        v0.6.0, none of them needs an untagged card: fuse (fuses done), sell (copies sold on the
+#        market, accepted offers included), market-coins (coins those sales paid), buy (cards bought)
+[goals]
+per_week = 3
+unlock_after_packs = 30         # goals fix the LATE game; hidden early so session 1 isn't flooded
+per_day = 3                     # v0.6.0 audit: 2 paid about 30 coins a day, too little to notice next to 700-1,000 a day
+daily_unlock_after_packs = 5    # daily goals show up in the first session, after a handful of packs
+
+[[goals.templates]]
+id = "pull-foil"
+title = "Pull 10 Foil-or-better cards"
+kind = "pull"
+treatment = "foil"
+target = 10
+reward = { pack = "deluxe", count = 1 }
+
+[[goals.templates]]
+id = "pull-holo"
+title = "Pull 2 Holo-or-better cards"
+kind = "pull"
+treatment = "holo"
+target = 2
+reward = { pack = "deluxe", count = 1 }
+
+[[goals.templates]]
+id = "upgrade"
+title = "Fuse copies into a rarer card 3 times"
+kind = "upgrade"
+target = 3
+reward = { pack = "deluxe", count = 1 }
+
+[[goals.templates]]
+id = "tag"
+title = "Apply 120 tags"
+kind = "tag"
+target = 120
+reward = { pack = "deluxe", count = 1 }
+
+[[goals.templates]]
+id = "review"
+title = "Review 8 shinier cards"
+kind = "review"
+target = 8
+reward = { pack = "deluxe", count = 1 }
+
+[[goals.templates]]
+id = "open"
+title = "Open 15 packs"
+kind = "open"
+target = 15
+reward = { pack = "deluxe", count = 1 }
+
+[[goals.templates]]
+id = "fuse"
+title = "Fuse 5 cards"
+kind = "fuse"
+target = 5
+reward = { pack = "deluxe", count = 1 }
+
+[[goals.templates]]
+id = "sell"
+title = "Sell 15 copies on the market"
+kind = "sell"
+target = 15
+reward = { pack = "deluxe", count = 1 }
+
+[[goals.templates]]
+id = "market-coins"
+title = "Earn 300 coins on the market"
+kind = "market-coins"
+target = 300
+reward = { pack = "deluxe", count = 1 }
+
+# Daily goals: small targets. v0.9.0: each pays one Standard pack (before: 15 to 40 coins).
+# A weekly goal pays one Deluxe pack (before: 200 to 250 coins).
+[[goals.templates]]
+id = "day-open"
+title = "Open 2 packs"
+kind = "open"
+period = "day"
+target = 2
+reward = { pack = "standard", count = 1 }
+
+[[goals.templates]]
+id = "day-open-more"
+title = "Open 5 packs"
+kind = "open"
+period = "day"
+target = 5
+reward = { pack = "standard", count = 1 }
+
+[[goals.templates]]
+id = "day-pull-foil"
+title = "Pull a Foil-or-better card"
+kind = "pull"
+treatment = "foil"
+period = "day"
+target = 1
+reward = { pack = "standard", count = 1 }
+
+[[goals.templates]]
+id = "day-fuse"
+title = "Fuse 1 card"
+kind = "fuse"
+period = "day"
+target = 1
+reward = { pack = "standard", count = 1 }
+
+[[goals.templates]]
+id = "day-upgrade"
+title = "Fuse copies into a rarer card"
+kind = "upgrade"
+period = "day"
+target = 1
+reward = { pack = "standard", count = 1 }
+
+[[goals.templates]]
+id = "day-sell"
+title = "Sell 3 copies on the market"
+kind = "sell"
+period = "day"
+target = 3
+reward = { pack = "standard", count = 1 }
+
+[[goals.templates]]
+id = "day-market-coins"
+title = "Earn 30 coins on the market"
+kind = "market-coins"
+period = "day"
+target = 30
+reward = { pack = "standard", count = 1 }
+
+[[goals.templates]]
+id = "day-tag"
+title = "Add 5 tags"
+kind = "tag"
+period = "day"
+target = 5
+reward = { pack = "standard", count = 1 }
+
+[[goals.templates]]
+id = "day-review"
+title = "Review 1 shinier card"
+kind = "review"
+period = "day"
+target = 1
+reward = { pack = "standard", count = 1 }
+
+[[goals.templates]]
+id = "day-buy"
+title = "Buy a card on the market"
+kind = "buy"
+period = "day"
+target = 1
+reward = { pack = "standard", count = 1 }
+
+# ---------------------------------------------------------------- mastery (v0.6.0)
+# A second progress number that keeps rising in a finished library (game/mastery.py).
+# points = every owned card counts by its best treatment, plus `fuse_points` per fuse ever done.
+# Level L is reached at round(level_base × L ^ level_exponent) points: 10, 30, 58, 92, 131, ... so
+# the levels get further apart. Each level pays once, when the player claims it (see `reward` below).
+# Selling a card can lower the points; a level that was paid is never paid again.
+# v0.6.0 audit (tools.simulate --audit): the first numbers (Normal 1 / Foil 3 / Holo 8 / Special 20,
+# 40 + 10 × L coins up to 300) paid most while the library was still being pulled (a point per new
+# card: 30% of a casual first day, and a first day without a time limit grew from 310 to over 530
+# minutes) and only 25-30 coins a day in a finished library. So a Normal card counts nothing: mastery
+# rises only with rarer treatments and with fuses, which is what the late game is made of. The steps
+# of the late game (Normal to Foil, Foil to Holo) are worth more, the early levels pay less.
+[mastery]
+points = { normal = 0, foil = 4, holo = 12, special = 30 }
+fuse_points = 2
+level_base = 10
+level_exponent = 1.6
+# v0.9.0: a level pays 1 Standard pack; every 5th level a Deluxe instead, every 10th a Premium.
+# (Before: 20 + 12 x L coins, up to 400.)
+reward = { pack = "standard", count = 1 }
+reward_every = [{ every = 5, pack = "deluxe" }, { every = 10, pack = "premium" }]
+
+# Category sets: every tag with at least `min_size` cards is a set. Owning all of its cards
+# at a treatment (or better) completes the set at that treatment, once each.
+# v0.9.0: the reward is packs by treatment, twice as many for a set of `large_size` cards or more.
+# A set pays only while more than half of its cards have not counted for a set at that treatment
+# before, so a second tag on the same cards pays nothing. (Before: 50 to 150 coins by size, times
+# the treatment's multiplier, scaled by the share of cards that had not counted.)
+[sets]
+min_size = 5
+treatments = ["foil", "holo", "special"]
+large_size = 15
+[sets.rewards]
+foil = { pack = "standard", count = 1 }
+holo = { pack = "deluxe", count = 1 }
+special = { pack = "premium", count = 1 }
+
+[rarity_decay]                  # packs get less shiny as completeness rises (§6)
+max = 0.0                       # v0.9.0 (decision D4): off, the odds are the same for every pack. Was 0.30
+                                # (at 100% completeness the non-Normal weights were × 0.70)
+
+# Request limits for the organizing endpoints (tagging, review, bulk).
+[limits]
+organize_per_second = 5         # sustained requests per second
+organize_burst = 30             # short bursts allowed above that
+bulk_max_items = 200            # most cards one bulk-tag call may touch
+
+# ---------------------------------------------------------------- onboarding
+# The "Getting started" checklist and the tours. v0.9.0: packs instead of coins, three Standard
+# packs in all: one for tagging the first five cards, one for the first fuse, one when every tour
+# is finished (not skipped). The other steps are steps only. (Before: 155 coins + 10 a tour.)
+[onboarding]
+tours = ["welcome", "organize", "packs", "card-panel", "market"]   # only these ids count (not "setup")
+tours_reward = { pack = "standard", count = 1 }
+
+[[onboarding.steps]]
+id = "add-media"
+title = "Add your photos and videos"
+kind = "media"
+target = 1
+
+[[onboarding.steps]]
+id = "first-pack"
+title = "Open your first pack"
+kind = "packs"
+target = 1
+
+[[onboarding.steps]]
+id = "tag-5"
+title = "Tag 5 of your cards"
+kind = "tagged"
+target = 5
+reward = { pack = "standard", count = 1 }
+
+[[onboarding.steps]]
+id = "tag-pulled"
+title = "Tag 15 of your cards"
+kind = "tagged"
+target = 15
+
+[[onboarding.steps]]
+id = "upgrade"
+title = "Fuse copies into a rarer card"
+kind = "upgrades"               # counts fuses (and upgrade attempts, while they are switched on)
+target = 1
+reward = { pack = "standard", count = 1 }
+
+# ---------------------------------------------------------------- RTP targets (§6)
+# RTP = (expected organizing value of the pulls + duplicate coins) / pack cost.
+# Organizing value assumes you tag what you pull (assumed_tags_per_card tags each).
+[rtp]
+assumed_tags_per_card = 2       # player behavior assumption used for the estimate
+early_target = [2.00, 2.30]     # a Standard pack in a fresh library (tests/test_packs_roll.py). v0.9.0: was
+                                # 0.70 to 0.85. Tagging now pays for the packs, so the return is above 1
+                                # for a player who tags what the pack holds (measured: 2.16 with two tags a card)

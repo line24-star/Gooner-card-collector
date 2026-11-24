@@ -1,0 +1,52 @@
+/* Today: check-in and free pack */
+.today { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.today-tile {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 14px;
+  background: var(--panel); border: 1px solid var(--line-soft);
+}
+.today-tile.is-ready { border-color: var(--coin); box-shadow: 0 0 0 1px color-mix(in srgb, var(--coin) 50%, transparent), 0 0 24px color-mix(in srgb, var(--coin) 18%, transparent); }
+.today-icon { font-size: 1.8rem; }
+.today-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.today-text .muted { font-size: 0.85rem; }
+
+/* Weekly goals */
+.chase-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.chase-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(120px, 1fr) auto; align-items: center; gap: 14px; }
+.chase-row.is-claimed { opacity: 0.6; }
+.chase-title { font-weight: 600; }
+.chase-bar { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; font-size: 0.85rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+.chase-bar .progress { display: block; }
+.chase-reward { color: var(--coin); font-weight: 600; white-space: nowrap; }
+.chase-action { justify-self: end; }
+.chase-foot { margin: 10px 0 0; font-size: 0.85rem; }
+
+/* Category sets */
+.set-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.set { padding: 12px 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line-soft); }
+.set-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.set-head a { color: var(--text); text-decoration: none; }
+.set-head a:hover { text-decoration: underline; }
+.set-tiers { display: grid; gap: 6px; }
+.set-tier { display: grid; grid-template-columns: 62px 1fr 44px minmax(110px, auto); align-items: center; gap: 10px; font-size: 0.85rem; }
+.set-tier-name { color: var(--rarity); font-weight: 700; }
+.set-tier-n { text-align: right; font-variant-numeric: tabular-nums; }
+.set-tier .btn { padding: 4px 12px; font-size: 0.85rem; }
+.set-tier > :last-child { justify-self: end; text-align: right; }
+
+@media (max-width: 560px) {
+  .chase-row { grid-template-columns: 1fr auto; }
+  .chase-bar { grid-column: 1 / -1; order: 3; }
+  .set-list { grid-template-columns: 1fr; }
+}
+
+/* v0.6.0: today's goals and the collector level */
+.chase-daily { margin-bottom: 18px; }
+.chase-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.chase-head h3 { margin: 0 0 8px; }
+.chase-head a { font-size: 0.85rem; }
+.mastery { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.mastery-level { font-weight: 600; }
+.mastery-level b { color: var(--r-special); font-size: 1.15em; }
+.mastery .chase-bar { flex: 1; min-width: 160px; }
+/* The bars in goal rows are spans: without this the fill has no width and the bar looks empty. */
+.chase-bar .progress-fill { display: block; }

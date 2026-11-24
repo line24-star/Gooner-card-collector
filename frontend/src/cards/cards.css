@@ -1,0 +1,216 @@
+/* ---------- Card frame ---------- */
+.card {
+  --rx: 0deg;
+  --ry: 0deg;
+  --mx: 50%;
+  --my: 50%;
+  --rarity: var(--r-normal);
+  position: relative;
+  aspect-ratio: 63 / 88;
+  perspective: 900px;
+  outline: none;
+  user-select: none;
+}
+.card-sm { width: 120px; }
+.card-md { width: 168px; }
+.card-lg { width: min(360px, 80vw); perspective: 1600px; }
+/* The lean is seen from further away on a bigger card, or it would look bent. */
+.card-xl { perspective: 2600px; }
+.card img, .card video { -webkit-user-drag: none; user-select: none; }
+.card video { pointer-events: none; }
+/* xl: sized by its container (Organize); the frame keeps the 63:88 ratio */
+.card-xl { height: 100%; max-width: 100%; }
+
+.card-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: linear-gradient(160deg, #262c58, #161a36);
+  border: 2px solid color-mix(in srgb, var(--rarity) 80%, transparent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.35s ease, box-shadow 0.2s ease;
+  transform-style: preserve-3d;
+}
+.card.is-tilting .card-inner { transition: transform 0.06s linear; }
+.card:hover .card-inner, .card:focus-visible .card-inner {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 0 2px var(--rarity);
+}
+
+/* Classic layout (Normal, Foil): title band, media in a framed window, footer band. */
+.card { container-type: inline-size; }
+.card-head, .card-foot {
+  flex: none;
+  display: flex; justify-content: space-between; align-items: center; gap: 6px;
+  padding: 4.5% 7%;
+}
+.card-head { font-size: 7.5cqi; font-weight: 700; }
+.card-foot { font-size: 6cqi; color: var(--muted); }
+.card-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-kind { color: var(--rarity); }
+.card-art {
+  flex: 1; min-height: 0; margin: 0 6%;
+  position: relative; overflow: hidden;
+  border-radius: 6px; background: #0b0e1e;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.card-art img, .card-art video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-art-ph {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rarity) 22%, #151a33), #0b0e1e 75%);
+  color: rgba(255, 255, 255, 0.35); font-size: 22cqi;
+}
+.card-tags { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.card-rarity {
+  flex: none;
+  color: var(--rarity); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+}
+/* Small cards: title on top, rarity only at the bottom. */
+.card-sm .card-tags { display: none; }
+.card-sm .card-foot { justify-content: flex-end; }
+
+/* Full art (Holo, Special): the media fills the whole face; title and footer sit over it on dark fades. */
+.card-fullart .card-art {
+  position: absolute; inset: 0; z-index: 0; margin: 0;
+  border-radius: 0; box-shadow: none;
+}
+.card-fullart .card-head, .card-fullart .card-foot {
+  position: absolute; left: 0; right: 0; z-index: 1;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.6);
+}
+.card-fullart .card-head {
+  top: 0; padding: 5% 7% 10%;
+  background: linear-gradient(to bottom, rgba(6, 8, 20, 0.85), rgba(6, 8, 20, 0.5) 60%, transparent);
+}
+.card-fullart .card-foot {
+  bottom: 0; padding: 10% 7% 5%;
+  color: rgba(255, 255, 255, 0.85);
+  background: linear-gradient(to top, rgba(6, 8, 20, 0.85), rgba(6, 8, 20, 0.45) 60%, transparent);
+}
+.card-fullart .card-rarity {
+  padding: 0.15em 0.6em; border-radius: 99px;
+  background: rgba(6, 8, 20, 0.6);
+  border: 1px solid color-mix(in srgb, var(--rarity) 70%, transparent);
+}
+
+.card-badge {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  z-index: 2;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #ff4d7d;
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.card-count {
+  position: absolute;
+  bottom: -24px;
+  left: -4px;
+  right: -4px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ---------- Version ring: Foil, Holo, Special ---------- */
+.vring {
+  position: absolute; z-index: 4;
+  left: 5cqi; bottom: 19cqi;
+  width: clamp(24px, 16cqi, 40px); aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(6, 8, 20, 0.82);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+.vring svg { display: block; width: 100%; height: 100%; }
+.vring path { fill: none; stroke: rgba(255, 255, 255, 0.42); stroke-width: 1.3; stroke-linecap: round; }
+.vring path.is-on { stroke: var(--seg); stroke-width: 4.4; stroke-linecap: butt; }
+
+/* ---------- Treatment layers ---------- */
+.card-shine, .card-glare, .card-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 2;
+}
+.card-glare {
+  background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.35), transparent 45%);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.card.is-tilting .card-glare { opacity: 1; }
+
+/* Foil: a cool metal frame (told apart from Normal at thumbnail size without the label) and a sweep that follows the pointer */
+.t-foil .card-inner {
+  background: linear-gradient(160deg, #24506e, #162a4a 55%, #1d3f63);
+  border-color: var(--r-foil);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(190, 240, 255, 0.45);
+}
+.t-foil .card-shine {
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.5) 45%, rgba(160, 230, 255, 0.4) 50%, transparent 65%);
+  background-size: 250% 250%;
+  background-position: var(--mx) var(--my);
+  mix-blend-mode: overlay;
+}
+
+/* Holo: rainbow sheen + animated glowing border */
+/* The sheen is a layer three times the card that SLIDES with the pointer (transform), and the glow is
+   a fixed shadow that only fades (opacity). Neither repaints the card, so a full-screen Holo stays
+   smooth: moving a background or animating a box-shadow redrew the whole card on every frame. */
+.t-holo .card-shine, .t-special .card-shine {
+  inset: -100%;
+  border-radius: 0;
+  background:
+    repeating-linear-gradient(110deg, #ff7a7a 0%, #ffd36e 8%, #7affb1 16%, #6ec8ff 24%, #c08bff 32%, #ff7a7a 40%);
+  transform: translate3d(calc((50% - var(--mx)) * 0.6), calc((50% - var(--my)) * 0.6), 0);
+  will-change: transform;
+  mix-blend-mode: color-dodge;
+  opacity: 0.35;
+}
+.card.t-holo::before, .card.t-special::before {
+  content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  border-radius: var(--radius-card);
+  box-shadow: 0 0 18px 2px var(--rarity);
+  opacity: 0;
+  animation: rarity-glow 2.4s ease-in-out infinite;
+  will-change: opacity;
+}
+@keyframes rarity-glow { 50% { opacity: 1; } }
+
+/* Special: stronger holo + gold frame + sparkles */
+.t-special .card-inner { border-width: 4px; border-color: var(--r-special); background: linear-gradient(160deg, #3a2f12, #1b1630); }
+/* Special: gold full-art frame — a bright inner line and warm edge glow over the art. */
+.t-special .card-inner::after {
+  content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 240, 190, 0.8), inset 0 0 14px rgba(255, 203, 71, 0.45);
+}
+.t-special .card-shine { opacity: 0.5; }
+.card-sparkles {
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+    radial-gradient(2px 2px at 70% 20%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 40% 80%, #fff, transparent),
+    radial-gradient(2px 2px at 85% 65%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 10% 70%, #fff, transparent);
+  animation: sparkle 1.8s steps(2) infinite;
+}
+@keyframes sparkle { 50% { opacity: 0.2; transform: scale(1.03); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .card-inner, .card-sparkles, .card::before { animation: none !important; }
+}
+/* A full-screen viewer covers everything: what is under it stops animating. */
+body:has(dialog.lightbox[open]) :is(.inspect, .opening, .content) .card::before,
+body:has(dialog.lightbox[open]) :is(.inspect, .opening, .content) .card-sparkles { animation-play-state: paused; }
